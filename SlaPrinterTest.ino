@@ -101,7 +101,7 @@ const uint16_t k_uBConfigBits = 0x8000;
 const int chipASelectPin = 47;
 //const int chipBSelectPin = 49; // This pin is not working. Just stays high.
 
-int b_iSerialState = 0;
+int g_iSerialState = 0;
 bool g_bIldaFormat = false;
 
 extern "C" {
@@ -185,7 +185,7 @@ void setup() {
 //#endif // Z_PROBE_SLED
 //  setup_homepin();
 
-  b_iSerialState = 0;
+  g_iSerialState = 0;
   g_bIldaFormat = false;
 }
 
@@ -231,138 +231,67 @@ void get_command()
     // Read 1 character from the serial peripheral
     //
     serial_char = MSerial.read();
-    if(0 == b_iSerialState)   // Data format is unknown
+    switch(g_iSerialState)
     {
+    case 0:
+      // If the first character is an 'I' then it could be an ILDA formatted data
+      //
+      if('I' == serial_char)
+      {
+        g_iSerialState = 1;
+      }
+      else
+      {
+        g_iSerialState = 2;
+        get_GcodeCommands();
+      }
+      break;
+    case 1:
+      break;
+    case 2:
+      break;
+    case 3:
+      break;
+    }
+    if(0 == g_iSerialState)   // Data format is unknown
+    {
+      // If the first character is an 'I' then it could be an ILDA formatted data
+      //
       if('I' == serial_char)
       {
         
       }
+      else
+      {
+        g_iSerialState = 1;
+        get_GcodeCommands();
+      }
     }
-    else if(1 == b_iSerialState)
+    switch(g_iSerialState)
     {
-      
+      case 1:
+        get_GcodeCommands();
+        break;
+      case 2:
+        get_IldaCommands();
     }
-    else
-    {
-      
-    }
-//    if(serial_char == '\n' ||
-//       serial_char == '\r' ||
-//       (serial_char == ':' && comment_mode == false) ||
-//       serial_count >= (MAX_CMD_SIZE - 1) )
-//    {
-//      if(!serial_count) { //if empty line
-//        comment_mode = false; //for new command
-//        return;
-//      }
-//      cmdbuffer[bufindw][serial_count] = 0; //terminate string
-//      if(!comment_mode){
-//        comment_mode = false; //for new command
-//        fromsd[bufindw] = false;
-//        if(strchr(cmdbuffer[bufindw], 'N') != NULL)
-//        {
-//          strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
-//          gcode_N = (strtol(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL, 10));
-//          if(gcode_N != gcode_LastN+1 && (strstr_P(cmdbuffer[bufindw], PSTR("M110")) == NULL) ) {
-//            SERIAL_ERROR_START;
-//            SERIAL_ERRORPGM(MSG_ERR_LINE_NO);
-//            SERIAL_ERRORLN(gcode_LastN);
-//            //Serial.println(gcode_N);
-//            FlushSerialRequestResend();
-//            serial_count = 0;
-//            return;
-//          }
-//
-//          if(strchr(cmdbuffer[bufindw], '*') != NULL)
-//          {
-//            byte checksum = 0;
-//            byte count = 0;
-//            while(cmdbuffer[bufindw][count] != '*') checksum = checksum^cmdbuffer[bufindw][count++];
-//            strchr_pointer = strchr(cmdbuffer[bufindw], '*');
-//
-//            if( (int)(strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)) != checksum) {
-//              SERIAL_ERROR_START;
-//              SERIAL_ERRORPGM(MSG_ERR_CHECKSUM_MISMATCH);
-//              SERIAL_ERRORLN(gcode_LastN);
-//              FlushSerialRequestResend();
-//              serial_count = 0;
-//              return;
-//            }
-//            //if no errors, continue parsing
-//          }
-//          else
-//          {
-//            SERIAL_ERROR_START;
-//            SERIAL_ERRORPGM(MSG_ERR_NO_CHECKSUM);
-//            SERIAL_ERRORLN(gcode_LastN);
-//            FlushSerialRequestResend();
-//            serial_count = 0;
-//            return;
-//          }
-//
-//          gcode_LastN = gcode_N;
-//          //if no errors, continue parsing
-//        }
-//        else  // if we don't receive 'N' but still see '*'
-//        {
-//          if((strchr(cmdbuffer[bufindw], '*') != NULL))
-//          {
-//            SERIAL_ERROR_START;
-//            SERIAL_ERRORPGM(MSG_ERR_NO_LINENUMBER_WITH_CHECKSUM);
-//            SERIAL_ERRORLN(gcode_LastN);
-//            serial_count = 0;
-//            return;
-//          }
-//        }
-//        if((strchr(cmdbuffer[bufindw], 'G') != NULL)){
-//          strchr_pointer = strchr(cmdbuffer[bufindw], 'G');
-//          switch((int)((strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)))){
-//          case 0:
-//          case 1:
-//          case 2:
-//          case 3:
-//            if (Stopped == true) {
-//              SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
-//              //mayis
-//              //LCD_MESSAGEPGM(MSG_STOPPED);
-//            }
-//            break;
-//          default:
-//            break;
-//          }
-//
-//        }
-//
-//        //If command was e-stop process now
-//        if(strcmp(cmdbuffer[bufindw], "M112") == 0)
-//          kill();
-//        
-//        bufindw = (bufindw + 1)%BUFSIZE;
-//        buflen += 1;
-//      }
-//      serial_count = 0; //clear buffer
-//    }
-//    else
-//    {
-//      if(serial_char == ';') comment_mode = true;
-//      if(!comment_mode)
-//      {
-
-        cmdbuffer[bufindw][serial_count++] = serial_char;
-
-        sMsg = "bufindw = ";
-        sMsg += bufindw;
-        sMsg += " serial_count = ";
-        sMsg += serial_count;
-        sMsg += "\n";
-        MSerial.write(sMsg.c_str());
-
-        MSerial.write("got it ");
-        MSerial.write(serial_char);
-        MSerial.write("\n");
-//      }
-//    }
   }
+}
+
+void get_IldaCommands(void)
+{
+    cmdbuffer[bufindw][serial_count++] = serial_char;
+
+    sMsg = "bufindw = ";
+    sMsg += bufindw;
+    sMsg += " serial_count = ";
+    sMsg += serial_count;
+    sMsg += "\n";
+    MSerial.write(sMsg.c_str());
+
+    MSerial.write("got it ");
+    MSerial.write(serial_char);
+    MSerial.write("\n");
 }
 
 void get_GcodeCommands(void)
