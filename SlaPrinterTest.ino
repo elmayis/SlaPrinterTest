@@ -267,9 +267,11 @@ void get_command()
       }
       break;
     case 1:
+      MSerial.write("case 1\n");
       g_iSerialState = 0;
       break;
     case 2:
+      MSerial.write("case 2\n");
       cmdbuffer[bufindw][serial_count++] = 0;
       MSerial.write(cmdbuffer[bufindw]);
       bufindw = 0;
@@ -277,14 +279,6 @@ void get_command()
       g_iSerialState = 0;
       break;
     }
-  }
-  switch(g_iSerialState)
-  {
-    case 0:
-    break;
-    case 1:
-    break;
-    case 2:
   }
 }
 
