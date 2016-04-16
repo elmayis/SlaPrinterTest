@@ -72,11 +72,6 @@ typedef struct {
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 static bool fromsd[BUFSIZE];
-// Buffer used to determine if the data is ILDA
-//
-static char g_cBuf[5];
-static int g_iBufIndex = 0;
-
 static int bufindr = 0;
 static int bufindw = 0;
 static int buflen = 0;
@@ -106,8 +101,7 @@ const uint16_t k_uBConfigBits = 0x8000;
 const int chipASelectPin = 47;
 //const int chipBSelectPin = 49; // This pin is not working. Just stays high.
 
-int g_iSerialState = 0;
-bool g_bIldaFormat = false;
+static int g_iSerialState = 0;
 
 extern "C" {
   extern unsigned int __bss_end;
@@ -190,9 +184,7 @@ void setup() {
 //#endif // Z_PROBE_SLED
 //  setup_homepin();
 
-  g_iBufIndex = 0;
   g_iSerialState = 0;
-  g_bIldaFormat = false;
 }
 
 void loop() {
@@ -243,29 +235,43 @@ void get_command()
     case 0:
       if((0 == bufindw) && (serial_count < 4))
       {
-        cmdbuffer[bufindw][serial_count++] = serial_char;
-        
-        g_cBuf[g_iBufIndex++] = serial_char;
-        if(4 == g_iBufIndex)
+        switch(serial_count)
         {
-          g_cBuf[4] = 0;
-          if(strcmp(g_cBuf, "ILDA") == 0)
-          {
-            g_iSerialState = 1;
-            MSerial.write("found ILDA\n");
-          }
-          else
-          {
-            g_iSerialState = 2;
-            g_iBufIndex = 0;
-            while(g_iBufIndex < 4)
+          case 0:
+            if('I' != serial_char)
             {
-              cmdbuffer[bufindw][serial_count++] = g_cBuf[g_iBufIndex++];
+              g_iSerialState = 2;
+              MSerial.write("did not find ILDA\n");
             }
-            MSerial.write("did not find ILDA\n");
-          }
-          g_iBufIndex = 0;
+          break;
+          case 1:
+            if('L' != serial_char)
+            {
+              g_iSerialState = 2;
+              MSerial.write("did not find ILDA\n");
+            }
+          break;
+          case 2:
+            if('D' != serial_char)
+            {
+              g_iSerialState = 2;
+              MSerial.write("did not find ILDA\n");
+            }
+          break;
+          case 3:
+            if('A' != serial_char)
+            {
+              g_iSerialState = 2;
+              MSerial.write("did not find ILDA\n");
+            }
+            else
+            {
+              g_iSerialState = 1;
+              MSerial.write("found ILDA\n");
+            }
+          break;
         }
+        cmdbuffer[bufindw][serial_count++] = serial_char;
       }
       break;
     case 1:
@@ -274,7 +280,7 @@ void get_command()
       break;
     case 2:
       MSerial.write("case 2\n");
-      cmdbuffer[bufindw][serial_count++] = 0;
+      cmdbuffer[bufindw][serial_count] = 0;
       MSerial.write(cmdbuffer[bufindw]);
       bufindw = 0;
       serial_count = 0;
