@@ -72,6 +72,11 @@ typedef struct {
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 static bool fromsd[BUFSIZE];
+// Buffer used to determine if the data is ILDA
+//
+static char g_cBuf[5];
+static int g_iBufIndex = 0;
+
 static int bufindr = 0;
 static int bufindw = 0;
 static int buflen = 0;
@@ -185,6 +190,7 @@ void setup() {
 //#endif // Z_PROBE_SLED
 //  setup_homepin();
 
+  g_iBufIndex = 0;
   g_iSerialState = 0;
   g_bIldaFormat = false;
 }
@@ -231,50 +237,54 @@ void get_command()
     // Read 1 character from the serial peripheral
     //
     serial_char = MSerial.read();
+    MSerial.write(serial_char);
     switch(g_iSerialState)
     {
     case 0:
-      // If the first character is an 'I' then it could be an ILDA formatted data
-      //
-      if('I' == serial_char)
+      if(g_iBufIndex < 4)
       {
-        g_iSerialState = 1;
-      }
-      else
-      {
-        g_iSerialState = 2;
-        get_GcodeCommands();
+        g_cBuf[g_iBufIndex++] = serial_char;
+        if(4 == g_iBufIndex)
+        {
+          g_cBuf[4] = 0;
+          if(strcmp(g_cBuf, "ILDA") == 0)
+          {
+            g_iSerialState = 1;
+            MSerial.write("found ILDA\n");
+          }
+          else
+          {
+            g_iSerialState = 2;
+            g_iBufIndex = 0;
+            while(g_iBufIndex < 4)
+            {
+              cmdbuffer[bufindw][serial_count++] = g_cBuf[g_iBufIndex++];
+            }
+            MSerial.write("did not find ILDA\n");
+          }
+          g_iBufIndex = 0;
+        }
       }
       break;
     case 1:
+      g_iSerialState = 0;
       break;
     case 2:
+      cmdbuffer[bufindw][serial_count++] = 0;
+      MSerial.write(cmdbuffer[bufindw]);
+      bufindw = 0;
+      serial_count = 0;
+      g_iSerialState = 0;
       break;
-    case 3:
-      break;
     }
-    if(0 == g_iSerialState)   // Data format is unknown
-    {
-      // If the first character is an 'I' then it could be an ILDA formatted data
-      //
-      if('I' == serial_char)
-      {
-        
-      }
-      else
-      {
-        g_iSerialState = 1;
-        get_GcodeCommands();
-      }
-    }
-    switch(g_iSerialState)
-    {
-      case 1:
-        get_GcodeCommands();
-        break;
-      case 2:
-        get_IldaCommands();
-    }
+  }
+  switch(g_iSerialState)
+  {
+    case 0:
+    break;
+    case 1:
+    break;
+    case 2:
   }
 }
 
