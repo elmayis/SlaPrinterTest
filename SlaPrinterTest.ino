@@ -241,28 +241,28 @@ void get_command()
             if('I' != serial_char)
             {
               g_iSerialState = 2;
-              MSerial.write("did not find ILDA\n");
+              MSerial.write("case 0 did not find ILDA\n");
             }
           break;
           case 1:
             if('L' != serial_char)
             {
               g_iSerialState = 2;
-              MSerial.write("did not find ILDA\n");
+              MSerial.write("case 1 did not find ILDA\n");
             }
           break;
           case 2:
             if('D' != serial_char)
             {
               g_iSerialState = 2;
-              MSerial.write("did not find ILDA\n");
+              MSerial.write("case 2 did not find ILDA\n");
             }
           break;
           case 3:
             if('A' != serial_char)
             {
               g_iSerialState = 2;
-              MSerial.write("did not find ILDA\n");
+              MSerial.write("case 3 did not find ILDA\n");
             }
             else
             {
@@ -276,6 +276,10 @@ void get_command()
       break;
     case 1:
       MSerial.write("case 1\n");
+      cmdbuffer[bufindw][serial_count] = 0;
+      MSerial.write(cmdbuffer[bufindw]);
+      bufindw = 0;
+      serial_count = 0;
       g_iSerialState = 0;
       break;
     case 2:
