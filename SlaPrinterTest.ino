@@ -102,6 +102,13 @@ const int chipASelectPin = 47;
 //const int chipBSelectPin = 49; // This pin is not working. Just stays high.
 
 static int g_iSerialState = 0;
+// ILDA parameters
+//
+static byte byFormatCode = 0;
+static long lNumRecords = 0;
+static long lFrameColorNum = 0;
+static long lTotalFrames = 0;
+
 
 extern "C" {
   extern unsigned int __bss_end;
@@ -185,6 +192,10 @@ void setup() {
 //  setup_homepin();
 
   g_iSerialState = 0;
+  byFormatCode = 0;
+  lNumRecords = 0;
+  lFrameColorNum = 0;
+  lTotalFrames = 0;  
 }
 
 void loop() {
@@ -276,11 +287,7 @@ void get_command()
       break;
     case 1:
       MSerial.write("case 1\n");
-      cmdbuffer[bufindw][serial_count] = 0;
-      MSerial.write(cmdbuffer[bufindw]);
-      bufindw = 0;
-      serial_count = 0;
-      g_iSerialState = 0;
+      get_IldaCommands();
       break;
     case 2:
       MSerial.write("case 2\n");
@@ -297,17 +304,6 @@ void get_command()
 void get_IldaCommands(void)
 {
     cmdbuffer[bufindw][serial_count++] = serial_char;
-
-    sMsg = "bufindw = ";
-    sMsg += bufindw;
-    sMsg += " serial_count = ";
-    sMsg += serial_count;
-    sMsg += "\n";
-    MSerial.write(sMsg.c_str());
-
-    MSerial.write("got it ");
-    MSerial.write(serial_char);
-    MSerial.write("\n");
 }
 
 void get_GcodeCommands(void)
@@ -420,6 +416,32 @@ void get_GcodeCommands(void)
 }
 
 void process_commands()
+{
+  switch(g_iSerialState)
+  {
+    case 1:
+      process_IldaCommands()
+    break;
+    case 2:
+      process_GcodeCommands()
+    break;
+  }
+}
+
+void process_IldaCommands()
+{
+  // This is the main header
+  //
+  if((0 == bufindw) && (serial_count == 35))
+  {
+    byFormatCode = cmdbuffer[bufindw][7];
+    lNumRecords = cmdbuffer[bufindw][24];
+    lFrameColorNum = cmdbuffer[bufindw][26];
+    lTotalFrames = cmdbuffer[bufindw][28];
+  }
+}
+
+void process_GcodeCommands()
 {
   unsigned long codenum; //throw away variable
   char *starpos = NULL;
