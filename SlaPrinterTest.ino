@@ -241,8 +241,10 @@ void get_command()
     switch(g_iSerialState)
     {
     case 0:
-      if(g_iBufIndex < 4)
+      if((0 == bufindw) && (serial_count < 4))
       {
+        cmdbuffer[bufindw][serial_count++] = serial_char;
+        
         g_cBuf[g_iBufIndex++] = serial_char;
         if(4 == g_iBufIndex)
         {
