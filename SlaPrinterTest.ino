@@ -64,7 +64,9 @@ typedef struct {
 
 // Buffer definition
 //
-static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
+//static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
+#define MAX_BUFFER_SIZE 384
+static char cmdbuffer[MAX_BUFFER_SIZE];
 static int bufindr = 0;       // 'read' buffer index (0 - 3)
 static int bufindw = 0;       // 'write' buffer index (0 - 3)
 static int buflen = 0;
@@ -143,18 +145,8 @@ void setup()
 
 void loop()
 {
-  // Do not read the serial port if the buffer is full
-  //
-  if(buflen < (BUFSIZE-1))
-    get_command();
-
-  if(buflen)
-  {
-    process_commands();
-    buflen = (buflen-1);
-    bufindr = (bufindr + 1)%BUFSIZE;
-  }
-
+  get_command();
+  process_commands();
 }
 
 void get_command()
@@ -175,28 +167,28 @@ void get_command()
           case 0:
             if('I' != serial_char)
             {
-              g_iSerialState = 2;
+              g_iSerialState = 0;
               MSerial.write("case 0 did not find ILDA\n");
             }
           break;
           case 1:
             if('L' != serial_char)
             {
-              g_iSerialState = 2;
+              g_iSerialState = 0;
               MSerial.write("case 1 did not find ILDA\n");
             }
           break;
           case 2:
             if('D' != serial_char)
             {
-              g_iSerialState = 2;
+              g_iSerialState = 0;
               MSerial.write("case 2 did not find ILDA\n");
             }
           break;
           case 3:
             if('A' != serial_char)
             {
-              g_iSerialState = 2;
+              g_iSerialState = 0;
               MSerial.write("case 3 did not find ILDA\n");
             }
             else
@@ -211,15 +203,10 @@ void get_command()
       break;
     case 1:
       MSerial.write("case 1\n");
-      get_IldaCommands();
+      cmdbuffer[bufindw][serial_count++] = serial_char;
       break;
     }
   }
-}
-
-void get_IldaCommands(void)
-{
-    cmdbuffer[bufindw][serial_count++] = serial_char;
 }
 
 void process_commands()
