@@ -62,17 +62,14 @@ typedef struct {
   volatile char busy;
 } block_t;
 
-static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
-static int bufindr = 0;
-static int bufindw = 0;
-static int buflen = 0;
-static char serial_char;
-static int serial_count = 0;
-static char *strchr_pointer; // just a pointer to find chars in the command string like X, Y, Z, E, etc
-
-// Used for messages back to the monitor
+// Buffer definition
 //
-static String sMsg;
+static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
+static int bufindr = 0;       // 'read' buffer index (0 - 3)
+static int bufindw = 0;       // 'write' buffer index (0 - 3)
+static int buflen = 0;
+static char serial_char;      // single character read from the serial port
+static int serial_count = 0;  // index to on one of the 4 arrays in the buffer
 
 const uint16_t k_uAConfigBits = 0x7000;
 const uint16_t k_uBConfigBits = 0x8000;
@@ -105,7 +102,8 @@ extern "C" {
   }
 }
 
-void setup() {
+void setup()
+{
 //  pinMode(chipASelectPin, OUTPUT);
 //  digitalWrite(chipASelectPin, HIGH);
 //
@@ -140,13 +138,16 @@ void setup() {
   lNumRecords = 0;
   lFrameColorNum = 0;
   lTotalFrames = 0;  
+  buflen = 0;
 }
 
-void loop() {
-
+void loop()
+{
+  // Do not read the serial port if the buffer is full
+  //
   if(buflen < (BUFSIZE-1))
     get_command();
-    
+
   if(buflen)
   {
     process_commands();
