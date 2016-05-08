@@ -237,7 +237,7 @@ void get_command()
 {
   while(MSerial.available() > 0  && buflen < BUFSIZE)
   {
-    // Read 1 character from the serial peripheral
+    // Read 1 character from the serial peripheral port
     //
     serial_char = MSerial.read();
     MSerial.write(serial_char);
