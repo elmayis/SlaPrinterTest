@@ -64,9 +64,7 @@ typedef struct {
 
 // Buffer definition
 //
-//static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
-#define MAX_BUFFER_SIZE 384
-static char cmdbuffer[MAX_BUFFER_SIZE];
+static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
 static int bufindr = 0;       // 'read' buffer index (0 - 3)
 static int bufindw = 0;       // 'write' buffer index (0 - 3)
 static int buflen = 0;
@@ -85,7 +83,7 @@ static byte byFormatCode = 0;
 static long lNumRecords = 0;
 static long lFrameColorNum = 0;
 static long lTotalFrames = 0;
-
+static long lRecordSize = 0;
 
 extern "C" {
   extern unsigned int __bss_end;
@@ -139,7 +137,8 @@ void setup()
   byFormatCode = 0;
   lNumRecords = 0;
   lFrameColorNum = 0;
-  lTotalFrames = 0;  
+  lTotalFrames = 0;
+  lRecordSize = 0;
   buflen = 0;
 }
 
@@ -151,7 +150,7 @@ void loop()
 
 void get_command()
 {
-  while(MSerial.available() > 0  && buflen < BUFSIZE)
+  while(MSerial.available() > 0 && buflen < BUFSIZE)
   {
     // Read 1 character from the serial peripheral port
     //
@@ -198,7 +197,6 @@ void get_command()
             }
           break;
         }
-        cmdbuffer[bufindw][serial_count++] = serial_char;
       }
       break;
     case 1:
