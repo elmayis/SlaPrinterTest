@@ -175,7 +175,10 @@ void get_command()
       }
       break;
     case 1:
-      MSerial.write("ILDA processing\n");
+      MSerial.write("get ILDA header\n");
+      break;
+    case 2:
+      MSerial.write("get ILDA records\n");
       break;
     case 10:
       MSerial.write("Gcode processing\n");
@@ -186,7 +189,9 @@ void get_command()
 
 void get_IldaHeaderInfo()
 {
-
+  // Save the character just in case this is not the ILDA header
+  //
+  cmdbuffer[bufindw][serial_count++] = serial_char;
 switch(serial_count)
     {
       case 0:
