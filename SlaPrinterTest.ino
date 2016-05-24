@@ -158,50 +158,27 @@ void get_command()
     MSerial.write(serial_char);
     switch(g_iSerialState)
     {
+      // This state will determine if the file stream is an ILDA or a Gcode
+      //
     case 0:
-      if((0 == bufindw) && (serial_count < 4))
+      if((0 == serial_count) && ('I' == serial_char))
       {
-        switch(serial_count)
-        {
-          case 0:
-            if('I' != serial_char)
-            {
-              g_iSerialState = 0;
-              MSerial.write("case 0 did not find ILDA\n");
-            }
-          break;
-          case 1:
-            if('L' != serial_char)
-            {
-              g_iSerialState = 0;
-              MSerial.write("case 1 did not find ILDA\n");
-            }
-          break;
-          case 2:
-            if('D' != serial_char)
-            {
-              g_iSerialState = 0;
-              MSerial.write("case 2 did not find ILDA\n");
-            }
-          break;
-          case 3:
-            if('A' != serial_char)
-            {
-              g_iSerialState = 0;
-              MSerial.write("case 3 did not find ILDA\n");
-            }
-            else
-            {
-              g_iSerialState = 1;
-              MSerial.write("found ILDA\n");
-            }
-          break;
-        }
+        // Set the state to process ILDA
+        //
+        g_iSerialState = 1;
+      }
+      else
+      {
+        // Set the state to process Gcode
+        //
+        g_iSerialState = 10;
       }
       break;
     case 1:
-      MSerial.write("case 1\n");
-      cmdbuffer[bufindw][serial_count++] = serial_char;
+      MSerial.write("ILDA processing\n");
+      break;
+    case 10:
+      MSerial.write("Gcode processing\n");
       break;
     }
   }
@@ -209,6 +186,44 @@ void get_command()
 
 void get_IldaHeaderInfo()
 {
+
+switch(serial_count)
+    {
+      case 0:
+        if('I' != serial_char)
+        {
+          g_iSerialState = 0;
+          MSerial.write("case 0 did not find ILDA\n");
+        }
+      break;
+      case 1:
+        if('L' != serial_char)
+        {
+          g_iSerialState = 0;
+          MSerial.write("case 1 did not find ILDA\n");
+        }
+      break;
+      case 2:
+        if('D' != serial_char)
+        {
+          g_iSerialState = 0;
+          MSerial.write("case 2 did not find ILDA\n");
+        }
+      break;
+      case 3:
+        if('A' != serial_char)
+        {
+          g_iSerialState = 0;
+          MSerial.write("case 3 did not find ILDA\n");
+        }
+        else
+        {
+          g_iSerialState = 1;
+          MSerial.write("found ILDA\n");
+        }
+      break;
+    }
+
 }
 
 void process_commands()
