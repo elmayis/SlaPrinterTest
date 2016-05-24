@@ -207,6 +207,10 @@ void get_command()
   }
 }
 
+void get_IldaHeaderInfo()
+{
+}
+
 void process_commands()
 {
 }
