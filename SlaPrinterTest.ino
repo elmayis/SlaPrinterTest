@@ -182,6 +182,7 @@ void get_command()
       break;
     case 2:
       MSerial.write("get ILDA records\n");
+      get_IldaRecords();
       break;
     case 10:
       MSerial.write("Gcode processing\n");
@@ -207,40 +208,63 @@ void get_IldaHeaderInfo()
     // Save the character just in case this is not the ILDA header
     //
     cmdbuffer[bufindw][serial_count] = serial_char;
-    g_iSerialState = 0;
-    switch(serial_count)
-    {
-    // The 'I' has already been detected therefore continue with a count of 1
-    //
-    case 1:
-      if('L' != serial_char)
-      {
-        MSerial.write("case 1 did not find ILDA\n");
-      }
-      break;
-    case 2:
-      if('D' != serial_char)
-      {
-        MSerial.write("case 2 did not find ILDA\n");
-      }
-      break;
-    case 3:
-      if('A' != serial_char)
-      {
-        MSerial.write("case 3 did not find ILDA\n");
-      }
-      else
-      {
-        g_iSerialState = 1;
-        MSerial.write("found ILDA\n");
-      }
-      break;
-    }
-  }
-  else
+  }    
+  switch(serial_count)
   {
-    
+  // The 'I' has already been detected therefore continue with a count of 1
+  //
+  case 1:
+    if('L' != serial_char)
+    {
+      g_iSerialState = 0;
+      MSerial.write("case 1 did not find ILDA\n");
+    }
+    break;
+  case 2:
+    if('D' != serial_char)
+    {
+      g_iSerialState = 0;
+      MSerial.write("case 2 did not find ILDA\n");
+    }
+    break;
+  case 3:
+    if('A' != serial_char)
+    {
+      g_iSerialState = 0;
+      MSerial.write("case 3 did not find ILDA\n");
+    }
+    else
+    {
+      MSerial.write("found ILDA\n");
+    }
+    break;
+  // Retrieve the format code
+  //
+  case 7:
+    byFormatCode = serial_char;
+    break;
+  // Retrieve the record size(big endian format)
+  //
+  case 24:
+    cmdbuffer[bufindw][0] = serial_char;
+    break;
+  case 25:
+    cmdbuffer[bufindw][1] = serial_char;
+    lNumRecords = (long)cmdbuffer[bufindw];
+    break;
+  // This is the end of the header
+  //
+  case 31:
+    // Set the state to retrieve the records
+    //
+    g_iSerialState = 2;
+    serial_count = 0;
+    break;
   }
+}
+
+void get_IldaRecords()
+{
 }
 
 void process_commands()
