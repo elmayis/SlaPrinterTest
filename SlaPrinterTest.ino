@@ -79,7 +79,6 @@ const int chipASelectPin = 47;
 static int g_iSerialState = 0;
 // ILDA parameters
 //
-static byte byFormatCode = 0;
 static long lNumRecords = 0;
 static long lFrameColorNum = 0;
 static long lTotalFrames = 0;
@@ -134,7 +133,6 @@ void setup()
   SERIAL_ECHOLN((int)sizeof(block_t)*BLOCK_BUFFER_SIZE);
 
   g_iSerialState = 0;
-  byFormatCode = 0;
   lNumRecords = 0;
   lFrameColorNum = 0;
   lTotalFrames = 0;
@@ -196,6 +194,7 @@ void get_command()
       FlushSerialRequestResend();
       serial_count = 0;
       bufindw = 0;
+      g_iSerialState = 0;
     }
   }
 }
@@ -241,7 +240,34 @@ void get_IldaHeaderInfo()
   // Retrieve the format code
   //
   case 7:
-    byFormatCode = serial_char;
+    if((0 == serial_char) || (5 == serial_char))
+    {
+      lRecordSize = 8;
+    }
+    else if(1 == serial_char)
+    {
+      lRecordSize = 6;
+    }
+    else if(2 == serial_char)
+    {
+      lRecordSize = 3;
+    }
+    else if(4 == serial_char)
+    {
+      lRecordSize = 10;
+    }
+    else
+    {
+      // Send error if the state is invalid
+      //
+      SERIAL_ERROR_START;
+      SERIAL_ERRORPGM(MSG_ERR_CHECKSUM_MISMATCH);
+      //SERIAL_ERRORLN(gcode_LastN);
+      FlushSerialRequestResend();
+      serial_count = 0;
+      bufindw = 0;
+      g_iSerialState = 0;
+    }
     break;
   // Retrieve the record size(big endian format)
   //
@@ -273,15 +299,6 @@ void process_commands()
 
 void process_IldaCommands()
 {
-  // This is the main header
-  //
-  if((0 == bufindw) && (serial_count == 35))
-  {
-    byFormatCode = cmdbuffer[bufindw][7];
-    lNumRecords = cmdbuffer[bufindw][24];
-    lFrameColorNum = cmdbuffer[bufindw][26];
-    lTotalFrames = cmdbuffer[bufindw][28];
-  }
 }
 
 void FlushSerialRequestResend()
