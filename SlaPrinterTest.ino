@@ -166,6 +166,8 @@ void get_command()
         // Set the state to process ILDA
         //
         g_iSerialState = 1;
+        cmdbuffer[bufindw][serial_count] = serial_char;
+        get_IldaHeaderInfo();
       }
       else
       {
@@ -176,6 +178,7 @@ void get_command()
       break;
     case 1:
       MSerial.write("get ILDA header\n");
+      get_IldaHeaderInfo();
       break;
     case 2:
       MSerial.write("get ILDA records\n");
@@ -183,52 +186,61 @@ void get_command()
     case 10:
       MSerial.write("Gcode processing\n");
       break;
+    default:
+      // Send error if the state is invalid
+      //
+      SERIAL_ERROR_START;
+      SERIAL_ERRORPGM(MSG_ERR_CHECKSUM_MISMATCH);
+      //SERIAL_ERRORLN(gcode_LastN);
+      FlushSerialRequestResend();
+      serial_count = 0;
+      bufindw = 0;
     }
   }
 }
 
 void get_IldaHeaderInfo()
 {
-  // Save the character just in case this is not the ILDA header
-  //
-  cmdbuffer[bufindw][serial_count++] = serial_char;
-switch(serial_count)
+  serial_count++;
+  if(serial_count < 4)
+  {
+    // Save the character just in case this is not the ILDA header
+    //
+    cmdbuffer[bufindw][serial_count] = serial_char;
+    g_iSerialState = 0;
+    switch(serial_count)
     {
-      case 0:
-        if('I' != serial_char)
-        {
-          g_iSerialState = 0;
-          MSerial.write("case 0 did not find ILDA\n");
-        }
+    // The 'I' has already been detected therefore continue with a count of 1
+    //
+    case 1:
+      if('L' != serial_char)
+      {
+        MSerial.write("case 1 did not find ILDA\n");
+      }
       break;
-      case 1:
-        if('L' != serial_char)
-        {
-          g_iSerialState = 0;
-          MSerial.write("case 1 did not find ILDA\n");
-        }
+    case 2:
+      if('D' != serial_char)
+      {
+        MSerial.write("case 2 did not find ILDA\n");
+      }
       break;
-      case 2:
-        if('D' != serial_char)
-        {
-          g_iSerialState = 0;
-          MSerial.write("case 2 did not find ILDA\n");
-        }
-      break;
-      case 3:
-        if('A' != serial_char)
-        {
-          g_iSerialState = 0;
-          MSerial.write("case 3 did not find ILDA\n");
-        }
-        else
-        {
-          g_iSerialState = 1;
-          MSerial.write("found ILDA\n");
-        }
+    case 3:
+      if('A' != serial_char)
+      {
+        MSerial.write("case 3 did not find ILDA\n");
+      }
+      else
+      {
+        g_iSerialState = 1;
+        MSerial.write("found ILDA\n");
+      }
       break;
     }
-
+  }
+  else
+  {
+    
+  }
 }
 
 void process_commands()
@@ -248,4 +260,10 @@ void process_IldaCommands()
   }
 }
 
+void FlushSerialRequestResend()
+{
+  MSerial.flush();
+  SERIAL_PROTOCOLPGM(MSG_RESEND);
+  SERIAL_PROTOCOLLNPGM(MSG_OK);
+}
 
