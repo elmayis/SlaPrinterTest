@@ -297,12 +297,16 @@ void get_IldaHeaderInfo()
 
 void get_IldaRecords()
 {
-  cmdbuffer[bufindw][serial_count++] = serial_char;
-  if(serial_count == iBufLimit)
-  {
-    serial_count = 0;
-    bufindw = (bufindw + 1) % BUFSIZE;
-  }
+   MSerial.write("Number of records is ");
+   MSerial.println(lNumRecords);
+   MSerial.write("Buffer limit is ");
+   MSerial.println(iBufLimit);
+  //cmdbuffer[bufindw][serial_count++] = serial_char;
+  //if(serial_count == iBufLimit)
+  //{
+  //  serial_count = 0;
+  //  bufindw = (bufindw + 1) % BUFSIZE;
+  //}
 }
 
 void process_commands()
