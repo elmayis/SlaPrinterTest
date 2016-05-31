@@ -84,6 +84,10 @@ static long lFrameColorNum = 0;
 static long lTotalFrames = 0;
 static long lRecordSize = 0;
 
+// This is used by the ILDA parser to determine how many bytes to use in each buffer string based on the record size
+//
+static int iBufLimit = 0;
+
 extern "C" {
   extern unsigned int __bss_end;
   extern unsigned int __heap_start;
@@ -138,6 +142,7 @@ void setup()
   lTotalFrames = 0;
   lRecordSize = 0;
   buflen = 0;
+  iBufLimit = 0;
 }
 
 void loop()
@@ -285,12 +290,19 @@ void get_IldaHeaderInfo()
     //
     g_iSerialState = 2;
     serial_count = 0;
+    iBufLimit = MAX_CMD_SIZE / lRecordSize;
     break;
   }
 }
 
 void get_IldaRecords()
 {
+  cmdbuffer[bufindw][serial_count++] = serial_char;
+  if(serial_count == iBufLimit)
+  {
+    serial_count = 0;
+    bufindw = (bufindw + 1) % BUFSIZE;
+  }
 }
 
 void process_commands()
